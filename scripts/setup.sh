@@ -133,11 +133,6 @@ cmd_install_deps() {
   local install_cmd
   install_cmd="$(pkg_install_cmd)"
 
-  if [ "$distro" = "unknown" ] || [ -z "$install_cmd" ]; then
-    err "Unsupported distro. Install these manually: git, docker, docker-compose, distrobox"
-    info "See docker/dev.Containerfile for the full list of dev tool dependencies."
-    exit 1
-  fi
 
   info "Detected distro: ${BOLD}${distro}${NC}"
   echo ""
@@ -170,6 +165,10 @@ cmd_install_deps() {
       echo ""
     fi
     return 0
+  elif [ "$distro" = "unknown" ] || [ -z "$install_cmd" ]; then
+    err "Unsupported distro. Install these manually: git, docker, docker-compose, distrobox"
+    info "See docker/dev.Containerfile for the full list of dev tool dependencies."
+    exit 1
   fi
 
   local packages=""
