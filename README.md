@@ -51,15 +51,21 @@ just services::up
 
 On WSL, `setup::init` additionally prompts for a `BAR_DATA_DIR` and wires up the native-Windows launch path — the engine runs as a Windows process for performance. See [Launching from WSL2](#launching-from-wsl2) for how `just bar::launch` crosses the WSL/Windows boundary.
 
-<details>
-<summary><strong>Nice-to-haves (optional)</strong></summary>
+## Nice-to-haves
 
-**A prompt that doesn't make you sad.** A fresh WSL distro's bash prompt (`user@host:~$`) has no git info, exit status, or color. Install [starship](https://starship.rs/) on the host:
+Optional — none of this is needed to build or run BAR.
+
+<details>
+<summary><strong>A nicer shell prompt (starship)</strong></summary>
+
+A fresh WSL distro drops you at a barebones `user@host:~$` — no git info, exit status, or color. [starship](https://starship.rs/) fixes that. Install it into `~/.local/bin` on the host (Linux or WSL):
 
 ```bash
 curl -sS https://starship.rs/install.sh | sh -s -- -b ~/.local/bin
 echo 'eval "$(starship init bash)"' >> ~/.bashrc && exec bash
 ```
+
+Targeting `~/.local/bin` — rather than the installer's default `/usr/local/bin`, or a distro package's `/usr/bin` — is what makes the prompt follow you into the dev container: distrobox shares your home dir and `~/.bashrc`, not host system dirs, so `distrobox enter bar-dev` picks up the same binary and init line for free.
 
 A minimal `~/.config/starship.toml` that adds a clock on the right:
 
@@ -72,6 +78,8 @@ format = '[$time]($style)'
 time_format = '%T'
 style = 'bold yellow'
 ```
+
+Starship's defaults use Nerd Font glyphs, which render as boxes without one installed — either install a Nerd Font (Windows: the `winget` line in [Quick Setup (Windows)](#quick-setup-windows); Linux: your distro's nerd-fonts package) or strip them: `starship preset plain-text-symbols -o ~/.config/starship.toml`.
 
 </details>
 
