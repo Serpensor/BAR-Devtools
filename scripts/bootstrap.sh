@@ -35,20 +35,35 @@ current_just_version() {
 }
 
 ensure_local_bin_on_path() {
-  local rc bin="$HOME/.local/bin"
+  local bin="$HOME/.local/bin"
+  mkdir -p "$bin"
+  case ":${PATH}:" in
+    *":$bin:"*) return 0 ;;   # already resolvable -- leave the rc alone
+  esac
+
+  local rc
   case "${SHELL:-}" in
     *zsh)  rc="$HOME/.zshrc" ;;
     *)     rc="$HOME/.bashrc" ;;
   esac
-  mkdir -p "$bin"
-  local line='export PATH="$HOME/.local/bin:$PATH"'
-  if ! grep -qxF "$line" "$rc" 2>/dev/null; then
-    printf '\n%s\n' "$line" >> "$rc"
-    info "Added ~/.local/bin to PATH in $rc"
+
+  warn "$bin is not on your PATH -- just, bar-launch, and editor tools install there."
+  local add=y
+  if (exec </dev/tty) 2>/dev/null; then   # openable tty? (node may exist but ENXIO without one)
+    printf "  Add it to %s? [Y/n] " "${rc/#$HOME/~}" > /dev/tty
+    read -r add < /dev/tty || add=y
   fi
-  case ":${PATH}:" in
-    *":$bin:"*) ;;
-    *) export PATH="$bin:$PATH" ;;
+  export PATH="$bin:$PATH"   # this shell works either way, so install_just + setup::init run
+  case "${add:-y}" in
+    [Nn]*)
+      warn "Leaving $rc untouched. Add this yourself or new shells won't find just:"
+      warn '  export PATH="$HOME/.local/bin:$PATH"'
+      ;;
+    *)
+      local line='export PATH="$HOME/.local/bin:$PATH"'
+      grep -qxF "$line" "$rc" 2>/dev/null || printf '\n%s\n' "$line" >> "$rc"
+      info "Added ~/.local/bin to PATH in ${rc/#$HOME/~} -- open a new shell or source it."
+      ;;
   esac
 }
 
