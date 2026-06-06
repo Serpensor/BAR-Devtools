@@ -90,9 +90,9 @@ check_podman() {
     info "  Try a fresh init:  podman system reset  (destroys local images)"
     return 1
   fi
-  # podman compose delegates to the buggy python podman-compose unless the Go binary is present.
-  if ! command -v docker-compose &>/dev/null; then
-    err "docker-compose not installed (podman compose dispatcher needs it as provider)."
+  # podman compose delegates to the python podman-compose unless a Go docker-compose provider is present.
+  if ! podman compose version &>/dev/null; then
+    err "podman compose not functional (install docker-compose or upgrade podman)."
     info "  Run: just setup::deps"
     return 1
   fi
@@ -102,7 +102,9 @@ check_podman() {
     info "  Run: just setup::deps"
     return 1
   fi
-  ok "podman $(podman --version | awk '{print $3}') + docker-compose $(docker-compose version --short 2>/dev/null) + socket detected"
+  local compose_ver
+  compose_ver="$(podman compose version 2>/dev/null | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
+  ok "podman $(podman --version | awk '{print $3}') + compose ${compose_ver} + socket detected"
 }
 
 check_distrobox() {
@@ -302,12 +304,14 @@ install_compose_upstream() {
   local min_version="5.0.0"
   local pin_version="5.1.3"
   local current=""
-  if command -v docker-compose &>/dev/null; then
-    current="$(docker-compose version --short 2>/dev/null | sed 's/^v//')"
-  fi
-  if [ -n "$current" ] && _ver_ge "$current" "$min_version"; then
-    ok "docker-compose ${current} already installed (>= ${min_version})"
-    return 0
+  local compose_out
+  compose_out="$(podman compose version 2>/dev/null)" || true
+  if [ -n "$compose_out" ]; then
+    current="$(echo "$compose_out" | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
+    if [ -n "$current" ] && _ver_ge "$current" "$min_version"; then
+      ok "podman compose delegates to Docker Compose ${current} (>= ${min_version})"
+      return 0
+    fi
   fi
 
   local arch

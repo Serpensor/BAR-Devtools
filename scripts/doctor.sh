@@ -34,7 +34,9 @@ check_doctor_deps() {
     _fail "podman API socket not active (docker-compose can't reach the daemon)"
     echo "       Run: systemctl --user enable --now podman.socket  (or just setup::deps)"
   else
-    _pass "podman $(podman --version | awk '{print $3}') + compose + socket"
+    local compose_ver
+    compose_ver="$(podman compose version 2>/dev/null | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
+    _pass "podman $(podman --version | awk '{print $3}') + compose ${compose_ver} + socket"
   fi
 
   if ! command -v distrobox &>/dev/null; then
