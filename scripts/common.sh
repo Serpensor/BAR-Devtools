@@ -42,6 +42,8 @@ write_env_key() {
     if grep -q "^${key}=" "$SETUP_ENV_FILE" 2>/dev/null; then
         sed -i "s|^${key}=.*|${key}=${val}|" "$SETUP_ENV_FILE"
     else
+        # don't glue onto a file that lacks a trailing newline
+        [ -s "$SETUP_ENV_FILE" ] && [ -n "$(tail -c1 "$SETUP_ENV_FILE")" ] && printf '\n' >> "$SETUP_ENV_FILE"
         printf '%s=%s\n' "$key" "$val" >> "$SETUP_ENV_FILE"
     fi
 }
