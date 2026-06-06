@@ -149,18 +149,12 @@ units *args: require-bar
     enter_distrobox
     (cd "$BAR_DIR" && lx --lua-version 5.1 test {{args}})
 
-# Install BAR's Lua dependencies into .lux/ (--clean wipes .lux/ first)
-lux-install *args: require-bar
+# Install BAR's Lua dependencies into .lux/
+lux-install: require-bar
     #!/usr/bin/env bash
     set -euo pipefail
     source "$DEVTOOLS_DIR/scripts/common.sh"
     enter_distrobox
-    for arg in {{args}}; do
-        if [ "$arg" = "--clean" ]; then
-            warn "Clearing $BAR_DIR/.lux for a fresh install"
-            rm -rf "$BAR_DIR/.lux"
-        fi
-    done
     (cd "$BAR_DIR" && lx --lua-version 5.1 sync)
 
 # Drop into an interactive shell with busted on PATH (for unit-test work)
