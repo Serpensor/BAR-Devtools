@@ -282,8 +282,10 @@ ensure_windows_python() {
 
 # Install distrobox from upstream; need >= 1.8.2.3 for the chpasswd fix against shadow-utils 4.13+.
 install_distrobox_upstream() {
-  local current
-  current="$(/usr/local/bin/distrobox --version 2>/dev/null | awk '{print $NF}')"
+  local current=""
+  if [ -x /usr/local/bin/distrobox ]; then
+    current="$(/usr/local/bin/distrobox --version 2>/dev/null | awk '{print $NF}')"
+  fi
   if [ -n "$current" ] && _ver_ge "$current" "1.8.2.3"; then
     ok "distrobox already up-to-date at /usr/local/bin: $current"
     return 0
@@ -302,7 +304,7 @@ install_compose_upstream() {
   local min_version="5.0.0"
   local pin_version="5.1.3"
   local current
-  current="$(_compose_version)"
+  current="$(_compose_version)" || true
   if [ -n "$current" ] && _ver_ge "$current" "$min_version"; then
     ok "podman compose delegates to Docker Compose ${current} (>= ${min_version})"
     return 0
