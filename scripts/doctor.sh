@@ -30,13 +30,14 @@ check_doctor_deps() {
   elif ! podman compose version &>/dev/null; then
     _fail "podman compose not functional (install docker-compose or upgrade podman)"
     echo "       Run: just setup::deps"
+  elif [ -z "$(_compose_version)" ]; then
+    _fail "podman compose using python podman-compose, not the Go docker-compose provider"
+    echo "       Run: just setup::deps"
   elif [ ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]; then
     _fail "podman API socket not active (docker-compose can't reach the daemon)"
     echo "       Run: systemctl --user enable --now podman.socket  (or just setup::deps)"
   else
-    local compose_ver
-    compose_ver="$(podman compose version 2>/dev/null | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
-    _pass "podman $(podman --version | awk '{print $3}') + compose ${compose_ver} + socket"
+    _pass "podman $(podman --version | awk '{print $3}') + compose $(_compose_version) + socket"
   fi
 
   if ! command -v distrobox &>/dev/null; then

@@ -99,6 +99,11 @@ _ver_ge() {
     return 0
 }
 
+# echo the Docker Compose version podman delegates to; empty if absent or the python provider
+_compose_version() {
+    podman compose version 2>/dev/null | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//'
+}
+
 # WSL2: nudge toward virtiofs for /mnt/c (faster than Plan 9 drvfs -- the sync
 # write path). Key is undocumented + experimental; gated on kernel only, since
 # the DeviceHost version isn't visible from Linux. No-op off WSL / on old kernels.

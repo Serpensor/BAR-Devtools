@@ -102,9 +102,7 @@ check_podman() {
     info "  Run: just setup::deps"
     return 1
   fi
-  local compose_ver
-  compose_ver="$(podman compose version 2>/dev/null | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
-  ok "podman $(podman --version | awk '{print $3}') + compose ${compose_ver} + socket detected"
+  ok "podman $(podman --version | awk '{print $3}') + compose $(_compose_version) + socket detected"
 }
 
 check_distrobox() {
@@ -303,15 +301,11 @@ install_distrobox_upstream() {
 install_compose_upstream() {
   local min_version="5.0.0"
   local pin_version="5.1.3"
-  local current=""
-  local compose_out
-  compose_out="$(podman compose version 2>/dev/null)" || true
-  if [ -n "$compose_out" ]; then
-    current="$(echo "$compose_out" | grep -i 'Docker Compose version' | sed 's/.*version v\?//; s/[^0-9.].*//')"
-    if [ -n "$current" ] && _ver_ge "$current" "$min_version"; then
-      ok "podman compose delegates to Docker Compose ${current} (>= ${min_version})"
-      return 0
-    fi
+  local current
+  current="$(_compose_version)"
+  if [ -n "$current" ] && _ver_ge "$current" "$min_version"; then
+    ok "podman compose delegates to Docker Compose ${current} (>= ${min_version})"
+    return 0
   fi
 
   local arch
