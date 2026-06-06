@@ -122,7 +122,7 @@ verify_remotes() {
     warn "  ${dir}: remotes don't match config (${complaint})"
     [ -n "$origin_url" ]          && warn "    origin   = ${origin_url}"
     [ -n "$upstream_remote_url" ] && warn "    upstream = ${upstream_remote_url}"
-    warn "    run \`just repos::fixup\` to normalize"
+    warn "    run \`just repos::standardize-remotes\` to normalize"
   fi
 }
 
@@ -406,7 +406,7 @@ cmd_update() {
   ok "Update complete."
 }
 
-cmd_fixup() {
+cmd_standardize_remotes() {
   load_repos_conf
 
   echo -e "${BOLD}=== Normalizing Repository Remotes ===${NC}"

@@ -80,7 +80,7 @@ preflight_chobby_channel() {
       return 0
     fi
     local ans
-    read -rp "Reset Chobby channel to byar-dev now? [Y/n] " ans
+    read -rp "Reset Chobby channel to dev mode (byar-dev) now? [Y/n] " ans
     if [ -z "$ans" ] || [[ "$ans" =~ ^[Yy] ]]; then
       set_chobby_channel "$data_dir" "byar-dev"
       ok "Chobby channel reset to byar-dev"
@@ -392,9 +392,9 @@ stop_linux() {
 
   # Anything alive after a brief grace period gets SIGKILL.
   sleep 0.3
-  local survivors
-  survivors="$(pgrep -f 'python.* -m bar_launch' 2>/dev/null | awk 'NF')"
-  if [ -n "$survivors" ]; then
+  local python_bar_launch_survivors
+  python_bar_launch_survivors="$(pgrep -f 'python.* -m bar_launch' 2>/dev/null | awk 'NF')"
+  if [ -n "$python_bar_launch_survivors" ]; then
     while IFS= read -r pid; do
       [ -z "$pid" ] && continue
       if kill -KILL "$pid" 2>/dev/null; then
@@ -402,7 +402,7 @@ stop_linux() {
       else
         warn "  PID $pid (bar_launch) survived SIGTERM and SIGKILL failed"
       fi
-    done <<<"$survivors"
+    done <<<"$python_bar_launch_survivors"
   fi
 
   if [ "$killed_any" = "0" ]; then

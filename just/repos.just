@@ -29,9 +29,9 @@ update:
     cmd_update
 
 # Normalize remotes to (origin = fork, upstream = canonical). Skips unrecognized layouts.
-fixup:
+standardize-remotes:
     #!/usr/bin/env bash
     set -euo pipefail
     source "$DEVTOOLS_DIR/scripts/common.sh"
     source "$DEVTOOLS_DIR/scripts/repos.sh"
-    cmd_fixup
+    cmd_standardize_remotes
