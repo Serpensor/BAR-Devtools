@@ -69,15 +69,18 @@ check_doctor_env() {
     echo "       Rebuild: just setup::distrobox"
   fi
 
-  local appimage
-  appimage="$(read_env_key BAR_APPIMAGE_PATH)"
-  if [ -z "$appimage" ]; then
-    info "  BAR_APPIMAGE_PATH not set (only needed for AppImage/launcher boots)"
-  elif bar_appimage_resolves; then
-    _pass "BAR_APPIMAGE_PATH=$appimage (resolves)"
-  else
-    _warn "BAR_APPIMAGE_PATH=$appimage does not resolve to an AppImage (moved or renamed?)"
-    echo "       Fix: just setup::reconfigure"
+  # AppImage is a Linux-only boot path; WSL launches the Windows .exe shim.
+  if ! is_wsl; then
+    local appimage
+    appimage="$(read_env_key BAR_APPIMAGE_PATH)"
+    if [ -z "$appimage" ]; then
+      info "  BAR_APPIMAGE_PATH not set (only needed for AppImage/launcher boots)"
+    elif bar_appimage_resolves; then
+      _pass "BAR_APPIMAGE_PATH=$appimage (resolves)"
+    else
+      _warn "BAR_APPIMAGE_PATH=$appimage does not resolve to an AppImage (moved or renamed?)"
+      echo "       Fix: just setup::reconfigure"
+    fi
   fi
 
   echo ""
