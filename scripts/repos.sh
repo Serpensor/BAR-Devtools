@@ -43,14 +43,24 @@ load_repos_conf() {
         continue
       fi
 
-      local dir url branch feature local_path
-      read -r dir url branch feature local_path <<< "$line"
+      local dir url branch feature local_path col4 _drop
+      if [ "$is_base" = "1" ]; then
+        read -r dir url branch feature local_path <<< "$line"
+      else
+        # repos.local.conf: directory/url/branch [local_path], no feature.
+        # A non-path 4th field is a stray feature -> ignored (doctor flags it).
+        read -r dir url branch col4 _drop <<< "$line"
+        feature=""
+        case "$col4" in
+          */*|'~'*) local_path="$col4" ;;
+          *)        local_path="" ;;
+        esac
+      fi
       [ -z "$dir" ] && continue
       local_path="${local_path/#\~/$HOME}"
       local raw_url="$url" raw_branch="$branch" raw_local_path="$local_path"
 
-      # repos.conf is canonical for url and feature; repos.local.conf overrides
-      # per blank column but never the feature (classification belongs upstream)
+      # repos.conf owns feature (and any per-row local_path); local has neither
       if [ "$is_base" = "1" ]; then
         [ -n "$url" ]     && base_urls[$dir]="$url"
         [ -n "$feature" ] && base_features[$dir]="$feature"

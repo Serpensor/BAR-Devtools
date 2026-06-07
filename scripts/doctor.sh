@@ -144,21 +144,18 @@ check_doctor_repos() {
   fi
 
   if [ -f "$REPOS_LOCAL" ]; then
-    local ignored_feature_entries
-    ignored_feature_entries="$(
+    # 4th column is local_path (a path); a non-path value is a stray feature
+    local stray_feature_entries
+    stray_feature_entries="$(
       awk '
-        FNR==NR { if ($0 !~ /^[[:space:]]*($|#|@)/) conf[$1]=1; next }
         /^[[:space:]]*($|#|@)/ { next }
-        $4 != "" && ($1 in conf) { print $1 " (" $4 ")" }
-      ' "$REPOS_CONF" "$REPOS_LOCAL"
+        $4 != "" && $4 !~ /\// && $4 !~ /^~/ { print $1 " (" $4 ")" }
+      ' "$REPOS_LOCAL"
     )"
 
-    if [ -n "$ignored_feature_entries" ]; then
-      _warn "repos.local.conf sets a feature column that is ignored (repos.conf owns features)"
-      echo "$ignored_feature_entries" | sed 's/^/       /'
-      echo ""
-      echo "       Remove the 4th column from these entries (keep it only as a"
-      echo "       placeholder if you also set a 5th-column local path)."
+    if [ -n "$stray_feature_entries" ]; then
+      _warn "Please remove feature flags from repos.local.conf (repos.conf owns them)"
+      echo "$stray_feature_entries" | sed 's/^/       /'
       echo ""
     fi
   fi

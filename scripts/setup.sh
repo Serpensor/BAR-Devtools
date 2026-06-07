@@ -1921,8 +1921,8 @@ cmd_init() {
   echo -e "    ${BOLD}just link::status${NC}             Show symlink status"
   echo -e "    ${BOLD}just repos::status${NC}            Show repository status"
   echo ""
-  echo "  To use your own forks, copy repos.conf to repos.local.conf"
-  echo "  and edit the URLs/branches. Then run: just repos::clone"
+  echo "  To use your own forks, add the rows you want to change to"
+  echo "  repos.local.conf (directory/url/branch). Then run: just repos::clone"
   echo ""
 }
 
