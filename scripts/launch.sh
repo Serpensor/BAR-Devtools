@@ -132,6 +132,8 @@ run_linux() {
     mapfile -d '' user_args < <(_strip_flag --debug-gl "${user_args[@]}")
   fi
 
+  preflight_appimage "${user_args[@]}"
+
   # Launcher autodetect anchors on cwd; point it at the managed checkout.
   cd "$repo_path"
 
@@ -175,6 +177,46 @@ _strip_flag() {
     if [ "$arg" = "$needle" ]; then continue; fi
     printf '%s\0' "$arg"
   done
+}
+
+# True if this launch boots via the AppImage launcher (so it needs an AppImage).
+# Mirrors bar_launch: boot = --boot or default (launcher for chobby, else engine).
+_launch_uses_appimage() {
+  _has_flag --print-cmd "$@" && return 1
+  _has_flag --launcher-binary "$@" && return 1   # explicit binary; BAR_APPIMAGE_PATH unused
+  if _has_flag --boot "$@"; then
+    [ "$(_flag_value --boot "$@")" = "launcher" ]; return
+  fi
+  if _has_flag --play "$@"; then
+    [ "$(_flag_value --play "$@")" = "chobby" ]; return
+  fi
+  # No --play: headless needs --play (bar-launch errors on its own); GUI may
+  # pick a launcher boot, so assume it could need the AppImage.
+  _has_flag --no-gui "$@" && return 1
+  _has_flag --headless "$@" && return 1
+  return 0
+}
+
+# Only when this launch will actually use the AppImage: ensure one resolves,
+# re-prompting interactively or failing with guidance instead of a deep traceback.
+preflight_appimage() {
+  _launch_uses_appimage "$@" || return 0
+  bar_appimage_resolves && return 0
+
+  if [ -t 0 ]; then
+    warn "This launch boots via the AppImage launcher, but no Beyond-All-Reason AppImage resolves."
+    ensure_bar_appimage_path_set || true
+    local p; p="$(read_env_key BAR_APPIMAGE_PATH)"
+    [ -n "$p" ] && export BAR_APPIMAGE_PATH="${p/#\~/$HOME}"
+    bar_appimage_resolves && return 0
+    warn "Still no AppImage configured -- launcher boot will likely fail."
+    return 0
+  fi
+
+  err "This launch needs the Beyond-All-Reason AppImage but BAR_APPIMAGE_PATH isn't set/resolvable."
+  info "Set it: just setup::reconfigure   (or set BAR_APPIMAGE_PATH in $DEVTOOLS_DIR/.env)"
+  info "Engine-direct boots (--boot engine / --play bar) don't need it."
+  exit 1
 }
 
 # springsettings.cfg keys this launcher owns. Row: <flag> <key> <on> <off>.
