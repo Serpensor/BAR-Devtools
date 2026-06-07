@@ -122,6 +122,14 @@ _normalize_remote_url() {
   printf '%s' "$u"
 }
 
+# rewrite a remote to the exact config URL when it only drifted by scheme/.git;
+# returns 0 if it changed anything
+_canonicalize_remote() {
+  local target="$1" remote="$2" current="$3" want="$4"
+  [ "$current" = "$want" ] && return 1
+  git -C "$target" remote set-url "$remote" "$want"
+}
+
 # warn (don't touch) when an existing repo's remotes don't match config
 verify_remotes() {
   local dir="$1" target="$2" url="$3" upstream_url="$4"
@@ -191,7 +199,7 @@ do_clone() {
 }
 
 # normalize an existing repo's remotes; warns and skips unrecognized layouts
-fixup_remotes() {
+standardize_remotes() {
   local dir="$1" target="$2" url="$3" upstream_url="$4"
   [ -d "$target/.git" ] || return 0
 
@@ -199,19 +207,28 @@ fixup_remotes() {
   origin_url="$(git -C "$target" remote get-url origin 2>/dev/null || true)"
   upstream_remote_url="$(git -C "$target" remote get-url upstream 2>/dev/null || true)"
 
+  local n_origin n_upstream n_url n_upstream_url
+  n_origin="$(_normalize_remote_url "$origin_url")"
+  n_upstream="$(_normalize_remote_url "$upstream_remote_url")"
+  n_url="$(_normalize_remote_url "$url")"
+  n_upstream_url="$(_normalize_remote_url "$upstream_url")"
+
   if [ -n "$upstream_url" ]; then
-    if [ "$origin_url" = "$url" ] && [ "$upstream_remote_url" = "$upstream_url" ]; then
-      ok "  ${dir}: already normalized"
+    if [ "$n_origin" = "$n_url" ] && [ "$n_upstream" = "$n_upstream_url" ]; then
+      local changed=1
+      _canonicalize_remote "$target" origin "$origin_url" "$url" && changed=0
+      _canonicalize_remote "$target" upstream "$upstream_remote_url" "$upstream_url" && changed=0
+      [ "$changed" = 0 ] && info "  ${dir}: canonicalized remote URLs" || ok "  ${dir}: already normalized"
       return 0
     fi
-    if [ "$origin_url" = "$url" ] && [ -z "$upstream_remote_url" ]; then
+    if [ "$n_origin" = "$n_url" ] && [ -z "$upstream_remote_url" ]; then
       info "  ${dir}: adding upstream=${upstream_url}"
       git -C "$target" remote add upstream "$upstream_url"
-    elif [ "$origin_url" = "$upstream_url" ] && [ -z "$upstream_remote_url" ]; then
+    elif [ "$n_origin" = "$n_upstream_url" ] && [ -z "$upstream_remote_url" ]; then
       info "  ${dir}: renaming origin -> upstream and adding origin=${url}"
       git -C "$target" remote rename origin upstream
       git -C "$target" remote add origin "$url"
-    elif [ "$origin_url" = "$upstream_url" ] && [ "$upstream_remote_url" = "$url" ]; then
+    elif [ "$n_origin" = "$n_upstream_url" ] && [ "$n_upstream" = "$n_url" ]; then
       info "  ${dir}: swapping inverted origin/upstream URLs"
       git -C "$target" remote set-url origin "$url"
       git -C "$target" remote set-url upstream "$upstream_url"
@@ -225,11 +242,15 @@ fixup_remotes() {
     git -C "$target" fetch upstream --tags --quiet 2>/dev/null \
       || warn "  ${dir}: upstream fetch failed (offline or auth?)"
   else
-    if [ "$upstream_remote_url" = "$url" ]; then
-      ok "  ${dir}: already normalized"
+    if [ "$n_upstream" = "$n_url" ]; then
+      if _canonicalize_remote "$target" upstream "$upstream_remote_url" "$url"; then
+        info "  ${dir}: canonicalized upstream URL"
+      else
+        ok "  ${dir}: already normalized"
+      fi
       return 0
     fi
-    if [ -z "$upstream_remote_url" ] && [ "$origin_url" = "$url" ]; then
+    if [ -z "$upstream_remote_url" ] && [ "$n_origin" = "$n_url" ]; then
       info "  ${dir}: renaming origin -> upstream"
       git -C "$target" remote rename origin upstream
     else
@@ -457,7 +478,7 @@ cmd_standardize_remotes() {
     local repo_path="$DEVTOOLS_DIR/$dir"
     [ -n "$local_path" ] && repo_path="$local_path"
     [ -d "$repo_path/.git" ] || continue
-    fixup_remotes "$dir" "$repo_path" "$url" "$upstream_url"
+    standardize_remotes "$dir" "$repo_path" "$url" "$upstream_url"
   done
   echo ""
   ok "Fixup complete."
