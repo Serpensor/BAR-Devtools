@@ -146,15 +146,6 @@ check_prerequisites() {
   fi
 }
 
-install_dockerignore() {
-  local target="$DEVTOOLS_DIR/teiserver/.dockerignore"
-  local source="$DEVTOOLS_DIR/docker/teiserver.dockerignore"
-  if [ -f "$source" ] && [ ! -f "$target" ]; then
-    cp "$source" "$target"
-    info "Installed .dockerignore for teiserver build context"
-  fi
-}
-
 # WSL2: enable systemd, mark / as a shared mount (needed for podman distrobox). No-op elsewhere.
 ensure_wsl_setup() {
   grep -qi microsoft /proc/version 2>/dev/null || return 0
@@ -1772,7 +1763,6 @@ cmd_init() {
   step "4/8  Building Docker images"
   echo ""
   if feature_selected teiserver; then
-    install_dockerignore
     info "Building Docker images..."
     $COMPOSE build teiserver
     $COMPOSE --profile spads pull spads
@@ -1953,7 +1943,6 @@ cmd_setup() {
     echo ""
   fi
 
-  install_dockerignore
   info "Building Docker images..."
   $COMPOSE build teiserver
   $COMPOSE --profile spads pull spads

@@ -1,9 +1,0 @@
-.git
-_build
-deps
-node_modules
-.elixir_ls
-.lexical
-.formatter_exs_cache
-cover
-doc

@@ -11,8 +11,6 @@ up *args:
     set -euo pipefail
     source "$DEVTOOLS_DIR/scripts/common.sh"
     require_host
-    source "$DEVTOOLS_DIR/scripts/setup.sh"
-    install_dockerignore
 
     start_lobby=0
     with_spads=0
@@ -163,8 +161,6 @@ build:
     set -euo pipefail
     source "$DEVTOOLS_DIR/scripts/common.sh"
     require_host
-    source "$DEVTOOLS_DIR/scripts/setup.sh"
-    install_dockerignore
     info "Building Docker images..."
     info "  - Teiserver: compiling Elixir deps + generating TLS certs"
     info "  - SPADS: pulling pre-built image (badosu/spads:latest)"
